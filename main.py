@@ -66,7 +66,7 @@ def main(argv):
 
         epoch += 1
 
-        if epoch % 10 == 0 and memory_limit == True:
+        if epoch % 10 == 0 and FLAGS.memory_limit == True:
             data.shuffle()
 
         if epoch % 1 == 0:
