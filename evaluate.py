@@ -33,22 +33,20 @@ flags.DEFINE_integer("R", 3, "Number of repeats")
 
 flags.DEFINE_integer("T", 128, "length of one segments")
 
-flags.DEFINE_integer("memory_limit", 40, "Memory Limit")
+flags.DEFINE_integer("memory_limit", 10, "Memory Limit")
 flags.DEFINE_bool("causal", False, "Flag for the system's causality")
 
 def main(argv):
     W = int((FLAGS.T) * (FLAGS.L / 2))
 
     data = dataset.Dataset(E=FLAGS.E, M=FLAGS.M, V=FLAGS.V, C=FLAGS.C, W=W, dataset_path=FLAGS.dataset_path,
-                           STEMS=STEMS, memory_limit=FLAGS.memory_limit)
+                           STEMS=STEMS, subsets="test", memory_limit=FLAGS.memory_limit)
 
     model = conv_tasnet.ConvTasNet(N=FLAGS.N, L=FLAGS.L, B=FLAGS.B, Sc=FLAGS.Sc, H=FLAGS.H,
                                  P=FLAGS.P, X=FLAGS.X, R=FLAGS.R, C=FLAGS.C, T=FLAGS.T, causal=FLAGS.causal)            
     model.compile(optimizer=tf.keras.optimizers.Adam(clipnorm=5, learning_rate=1e-3), loss=loss.SDR(), metrics=[metrics.SNR])
     model.build(input_shape=(FLAGS.M, W))
     model.summary()
-
-    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.5, patience=3, min_lr=5e-5)
 
     epoch = 0
     if path.exists(FLAGS.checkpoint):
@@ -59,21 +57,11 @@ def main(argv):
         epoch = int(checkpoint_name) + 1
         model.load_weights(f"{FLAGS.checkpoint}/{checkpoint_name}.ckpt")
 
-    while not epoch == FLAGS.epochs:
-        print(f"Epoch:{epoch+1} ")
+    print("Evaluate Model")
 
-        x, y = data.get_dataset()
-        history = model.fit(x, y, batch_size=FLAGS.M, callbacks=[reduce_lr])
-
-        epoch += 1
-
-        if epoch % 10 == 0 and FLAGS.memory_limit == True:
-            data.shuffle()
-
-        if epoch % 1 == 0:
-            model.save_weights(f"{FLAGS.checkpoint}/{epoch:05d}.ckpt")
-            model.save(f"{FLAGS.checkpoint}/model")
-    
+    x, y = data.get_dataset()
+    results = model.evaluate(x, y, batch_size=FLAGS.M)
+    print(results)
 
 if __name__ == '__main__':
     #with tf.device('/cpu:0'):

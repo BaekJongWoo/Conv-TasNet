@@ -8,4 +8,4 @@ class SDR(tf.keras.losses.Loss):
         self.epsilon = 1e-7
 
     def call(self, s, s_hat):
-        return 20 * tf.math.log(tf.norm(s_hat - s) / (tf.norm(s) + self.epsilon) + self.epsilon) / math.log(10)
+        return 20 * tf.math.log(tf.norm(s - s_hat) / (tf.norm(s) + self.epsilon) + self.epsilon) / math.log(10)

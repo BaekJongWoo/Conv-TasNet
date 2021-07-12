@@ -14,26 +14,27 @@ class DecodedTrack:
 
 class Dataset:
     
-    def __init__(self, E, M, C, W, STEMS, dataset_path, subsets:str="train", memory_limit: bool=False):
+    def __init__(self, E, M, V, C, W, STEMS, dataset_path, subsets="train", memory_limit: int=100):
 
-        self.E, self.M, self.C, self.W = E, M, C, W
+        self.E, self.M, self.V, self.C, self.W = E, M, V, C, W
         self.STEMS = STEMS
-        self.subsets = subsets
         self.dataset_path = dataset_path
 
         self.tracks_train = list(musdb.DB(root=dataset_path, subsets=subsets))
 
+        self.memory_limit = memory_limit
+
         if memory_limit == memory_limit:
-            self.tracks_train = np.random.choice(self.tracks_train, size=40, replace=False)
+            self.tracks_train = np.random.choice(self.tracks_train, size=self.memory_limit, replace=False)
 
         self.num_tracks = len(self.tracks_train)
-        print("Decoding Tracks: {} Tracks".format(self.num_tracks))
+        print("Decoding train Tracks: {} Tracks".format(self.num_tracks))
         for i in tqdm(range(self.num_tracks)):
             self.tracks_train[i] = self.decode(self.tracks_train[i])
     
     def shuffle(self):
-        self.tracks_train = list(musdb.DB(root=self.dataset_path, subsets=self.subsets))
-        self.tracks_train = np.random.choice(self.tracks_train, size=50, replace=False)
+        self.tracks_train = list(musdb.DB(root=self.dataset_path, subsets="train"))
+        self.tracks_train = np.random.choice(self.tracks_train, size=self.memory_limit, replace=False)
         self.num_tracks = len(self.tracks_train)
         print("Decoding Tracks: {} Tracks".format(self.num_tracks))
         for i in tqdm(range(self.num_tracks)):
@@ -53,10 +54,10 @@ class Dataset:
         indices = np.random.choice(list(range(self.num_tracks)), self.num_tracks, replace=False)
 
         duration = self.W
-        x_batch = np.zeros((self.E * self.M * 2, self.W))
-        y_batch = np.zeros((self.E * self.M * 2, self.C, self.W))
+        x_batch = np.zeros(( (self.E * self.M) * 2, self.W))
+        y_batch = np.zeros(( (self.E * self.M) * 2, self.C, self.W))
 
-        for i in range(self.E * self.M):
+        for i in range(self.E * self.M ):
             track = self.tracks_train[np.random.choice(indices)]
             start = np.random.randint(0, track.length - duration)
 
